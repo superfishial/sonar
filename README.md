@@ -4,6 +4,8 @@ Tiny monitoring tool written in Rust for monitoring CPU temperature, CPU usage, 
 
 ## Roadmap
 
+- [ ] Configuration file
+- [x] Nix Package/NixOS module
 - [x] CPU
   - [x] Temperature
   - [x] Usage
@@ -25,3 +27,4 @@ Tiny monitoring tool written in Rust for monitoring CPU temperature, CPU usage, 
 cargo run -- --discord-webhook-url <DISCORD_WEBHOOK_URL>
 ```
 
+For development, you may provide a `.env` file (see `.env.sample`).
