@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use anyhow::Result;
 use chrono::Duration;
 use clap::Parser;
+use indexmap::IndexMap;
 use reqwest::Url;
 use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
@@ -12,7 +12,7 @@ use crate::{
     cpu::{CpuTempMonitor, CpuUsageMonitor},
     disk::{DiskScrubMonitor, DiskStatsMonitor, DiskUsageMonitor},
     memory::MemoryUsageMonitor,
-    monitor::{Alert, Monitor},
+    monitor::{Alert, Monitor, Severity},
     nixpkgs::FlakeLockMonitor,
     systemd::SystemdServiceMonitor,
 };
@@ -40,6 +40,10 @@ async fn main() {
 
     let config = Config::parse();
 
+    if config.dry_run {
+        warn!("!!! Dry run mode enabled !!!");
+    }
+
     let mut monitors: Vec<Box<dyn Monitor>> = vec![
         // CPU
         Box::new(CpuTempMonitor::new(80., Duration::minutes(1))),
@@ -65,7 +69,7 @@ async fn main() {
         )),
     ];
 
-    let mut last_alert_send: HashMap<String, chrono::DateTime<chrono::Utc>> = HashMap::new();
+    let mut alert_sender = AlertSender::new(&config.discord_webhook_url, config.dry_run);
 
     info!("Starting sonar");
     loop {
@@ -73,32 +77,18 @@ async fn main() {
         for monitor in monitors.iter_mut() {
             match monitor.run().await {
                 Ok(Some(alert)) => {
-                    // Ensure X hours have passed since the last alert with this ID
-                    let sufficient_time_since_last_alert = last_alert_send
-                        .get(&alert.id)
-                        .map(|last_send| {
-                            (*last_send + chrono::Duration::hours(4)) < chrono::Utc::now()
-                        })
-                        .unwrap_or(true);
-
-                    if config.dry_run {
-                        info!(
-                            "Not sending alert '{}' as dry run is enabled: {:?}",
-                            alert.id, alert
-                        );
-                    } else if sufficient_time_since_last_alert {
-                        last_alert_send.insert(alert.id.clone(), chrono::Utc::now());
-                        send_alert(&config.discord_webhook_url, &alert)
-                            .await
-                            .unwrap();
-                    } else {
-                        info!(
-                            "Not sending alert '{}' as it was sent less than 4 hours ago",
-                            alert.id
-                        );
-                    }
+                    alert_sender.send(&alert).await;
                 }
-                Err(e) => error!("Error running monitor {:?}: {}", monitor, e),
+                Err(e) => {
+                    alert_sender
+                        .send(&Alert::new(
+                            &format!("Error running monitor {}", monitor.name()),
+                            &format!("{:?}", e),
+                            Severity::Warn,
+                            IndexMap::new(),
+                        ))
+                        .await;
+                }
                 _ => {}
             }
         }
@@ -107,13 +97,51 @@ async fn main() {
     }
 }
 
-async fn send_alert(webhook_url: &Url, alert: &Alert) -> Result<()> {
-    warn!(id = alert.id, msg = alert.message, fields = ?alert.fields, "Sending alert...");
-    let client = reqwest::Client::new();
-    client
-        .post(webhook_url.clone())
-        .json(&alert.to_json())
-        .send()
-        .await?;
-    Ok(())
+struct AlertSender {
+    webhook_url: Url,
+    dry_run: bool,
+    last_alert_send: HashMap<String, chrono::DateTime<chrono::Utc>>,
+}
+
+impl AlertSender {
+    pub fn new(webhook_url: &Url, dry_run: bool) -> Self {
+        Self {
+            webhook_url: webhook_url.clone(),
+            dry_run,
+            last_alert_send: HashMap::new(),
+        }
+    }
+
+    async fn send(&mut self, alert: &Alert) {
+        // Ensure X hours have passed since the last alert with this ID
+        let sufficient_time_since_last_alert = self
+            .last_alert_send
+            .get(&alert.id)
+            .map(|last_send| (*last_send + chrono::Duration::hours(4)) < chrono::Utc::now())
+            .unwrap_or(true);
+        if !sufficient_time_since_last_alert {
+            info!(
+                id = alert.id,
+                "Not sending alert as it was sent less than 4 hours ago",
+            );
+        }
+
+        self.last_alert_send
+            .insert(alert.id.clone(), chrono::Utc::now());
+        warn!(id = alert.id, msg = alert.message, fields = ?alert.fields, "Sending alert...");
+        if self.dry_run {
+            return;
+        }
+
+        let client = reqwest::Client::new();
+        match client
+            .post(self.webhook_url.clone())
+            .json(&alert.to_json())
+            .send()
+            .await
+        {
+            Ok(_) => {}
+            Err(e) => error!("Error sending alert: {:?}", e),
+        };
+    }
 }

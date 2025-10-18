@@ -7,6 +7,7 @@ use serde_json::{Value, json};
 
 #[async_trait]
 pub trait Monitor: Debug {
+    fn name(&self) -> String;
     async fn run(&mut self) -> Result<Option<Alert>>;
 }
 

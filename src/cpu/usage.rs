@@ -32,6 +32,10 @@ impl CpuUsageMonitor {
 
 #[async_trait]
 impl Monitor for CpuUsageMonitor {
+    fn name(&self) -> String {
+        "CPU Usage".to_string()
+    }
+
     async fn run(&mut self) -> Result<Option<Alert>> {
         self.system.refresh_cpu_usage();
         let usage_percent = self.system.global_cpu_usage();

@@ -87,6 +87,10 @@ impl FlakeLockMonitor {
 
 #[async_trait]
 impl Monitor for FlakeLockMonitor {
+    fn name(&self) -> String {
+        "Flake Lock Outdated".to_string()
+    }
+
     async fn run(&mut self) -> Result<Option<Alert>> {
         let id = "Flake Lock Outdated: nixpkgs";
         let now = Utc::now();

@@ -22,6 +22,10 @@ impl DiskStatsMonitor {
 
 #[async_trait]
 impl Monitor for DiskStatsMonitor {
+    fn name(&self) -> String {
+        format!("BTRFS Disk Health: {}", self.mount_point)
+    }
+
     async fn run(&mut self) -> Result<Option<Alert>> {
         let per_device_stats = get_btrfs_device_stats(&self.mount_point)?;
 

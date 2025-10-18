@@ -25,6 +25,10 @@ impl DiskScrubMonitor {
 
 #[async_trait]
 impl Monitor for DiskScrubMonitor {
+    fn name(&self) -> String {
+        format!("BTRFS Scrub Needed: {}", self.mount_point)
+    }
+
     async fn run(&mut self) -> Result<Option<Alert>> {
         let id = &format!("BTRFS Scrub Needed: {}", self.mount_point);
         let now = chrono::Utc::now();

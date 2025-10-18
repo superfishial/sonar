@@ -21,21 +21,14 @@
       system:
       let
         overlays = [ (import rust-overlay) ];
-        pkgs = import nixpkgs {
-          inherit system overlays;
-        };
+        pkgs = import nixpkgs { inherit system overlays; };
 
         sonar = pkgs.rustPlatform.buildRustPackage {
           pname = "sonar";
           version = "0.1.0";
-
           src = ./.;
-
           cargoLock.lockFile = ./Cargo.lock;
-
-          nativeBuildInputs = with pkgs; [
-            pkg-config
-          ];
+          nativeBuildInputs = [ pkgs.pkg-config ];
 
           meta = with pkgs.lib; {
             description = "Sonar";
@@ -110,6 +103,7 @@
                 User = cfg.user;
                 Group = cfg.group;
                 ExecStart = "${cfg.package}/bin/sonar ${escapeShellArgs cfg.extraArgs}";
+                EnvironmentFile = mkIf (cfg.environmentFile != null) cfg.environmentFile;
                 Restart = "on-failure";
                 RestartSec = "5s";
 
@@ -118,9 +112,6 @@
                 PrivateTmp = true;
                 ProtectHome = true;
                 ReadWritePaths = [ ];
-
-                # Environment
-                EnvironmentFile = mkIf (cfg.environmentFile != null) cfg.environmentFile;
               };
             };
 

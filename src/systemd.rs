@@ -84,6 +84,10 @@ impl SystemdServiceMonitor {
 
 #[async_trait]
 impl Monitor for SystemdServiceMonitor {
+    fn name(&self) -> String {
+        format!("Systemd Service: {}", self.service_name)
+    }
+
     async fn run(&mut self) -> Result<Option<Alert>> {
         let id = &format!("Systemd Service: {}", self.service_name);
         let now = Utc::now();

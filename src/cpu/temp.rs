@@ -29,6 +29,10 @@ impl CpuTempMonitor {
 
 #[async_trait]
 impl Monitor for CpuTempMonitor {
+    fn name(&self) -> String {
+        "CPU Temperature".to_string()
+    }
+
     async fn run(&mut self) -> Result<Option<Alert>> {
         self.components.refresh(true);
         let temperatures = self.components.list();

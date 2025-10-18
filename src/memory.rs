@@ -40,6 +40,10 @@ impl MemoryUsageMonitor {
 
 #[async_trait]
 impl Monitor for MemoryUsageMonitor {
+    fn name(&self) -> String {
+        "Memory Usage".to_string()
+    }
+
     async fn run(&mut self) -> Result<Option<Alert>> {
         self.system.refresh_memory();
         let usage_percent =

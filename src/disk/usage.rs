@@ -22,6 +22,10 @@ impl DiskUsageMonitor {
 
 #[async_trait]
 impl Monitor for DiskUsageMonitor {
+    fn name(&self) -> String {
+        format!("Disk Usage: {}", self.mount_point)
+    }
+
     async fn run(&mut self) -> Result<Option<Alert>> {
         let disks = Disks::new_with_refreshed_list();
 
