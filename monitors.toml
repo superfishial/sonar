@@ -1,0 +1,46 @@
+[cpu.temp]
+threshold = 80
+duration = "1m"
+
+[[cpu.usage]]
+threshold = 25
+duration = "12h"
+
+[[cpu.usage]]
+threshold = 75
+duration = "30m"
+
+[[disk.health]]
+mount_point = "/"
+
+[[disk.health]]
+mount_point = "/data/hdd"
+
+[[disk.usage]]
+mount_point = "/"
+threshold = 0.75
+
+[[disk.usage]]
+mount_point = "/data/hdd"
+threshold = 0.75
+
+[[disk.scrub]]
+mount_point = "/"
+time_since = "60d"
+
+[[disk.scrub]]
+mount_point = "/data/hdd"
+time_since = "60d"
+
+[memory]
+critical_threshold = 0.9
+warn_threshold = 0.75
+duration = "30m"
+
+[nixpkgs]
+path = "/home/saghen/code/personal/nixfiles/flake.lock"
+max_age = "30d"
+
+[systemd]
+service_name = "restic-backups-primary"
+max_time_since = "2d"

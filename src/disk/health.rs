@@ -1,27 +1,35 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
 use async_trait::async_trait;
 use indexmap::IndexMap;
+use serde::Deserialize;
 
 use crate::{
     disk::btrfs::{BtrfsStats, get_btrfs_device_stats},
     monitor::{Alert, Monitor, Severity},
 };
 
+#[derive(Debug, Deserialize)]
+pub struct DiskHealthConfig {
+    pub mount_point: PathBuf,
+}
+
 #[derive(Debug)]
-pub struct DiskStatsMonitor {
+pub struct DiskHealthMonitor {
     mount_point: String,
 }
 
-impl DiskStatsMonitor {
-    pub fn new(mount_point: &str) -> Self {
+impl DiskHealthMonitor {
+    pub fn new(config: DiskHealthConfig) -> Self {
         Self {
-            mount_point: mount_point.to_string(),
+            mount_point: config.mount_point.to_string_lossy().to_string(),
         }
     }
 }
 
 #[async_trait]
-impl Monitor for DiskStatsMonitor {
+impl Monitor for DiskHealthMonitor {
     fn name(&self) -> String {
         format!("BTRFS Disk Health: {}", self.mount_point)
     }

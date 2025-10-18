@@ -1,8 +1,8 @@
 mod btrfs;
+mod health;
 mod scrub;
-mod stats;
 mod usage;
 
-pub use scrub::DiskScrubMonitor;
-pub use stats::DiskStatsMonitor;
-pub use usage::DiskUsageMonitor;
+pub use health::*;
+pub use scrub::*;
+pub use usage::*;

@@ -77,7 +77,7 @@ fn parse_btrfs_stats(output: &str) -> Result<IndexMap<String, BtrfsStats>> {
         let key_part = parts[0];
         let value = parts[1]
             .parse::<u64>()
-            .expect(&format!("Failed to parse value as u64: '{}'", parts[1]));
+            .context(format!("Failed to parse value as u64: '{}'", parts[1]))?;
 
         // Extract device and stat name
         if let Some(dot_pos) = key_part.rfind('.') {
@@ -91,7 +91,7 @@ fn parse_btrfs_stats(output: &str) -> Result<IndexMap<String, BtrfsStats>> {
                 .to_string();
 
             // Get or create the stats entry for this device
-            let stats = stats_map.entry(device).or_insert_with(BtrfsStats::default);
+            let stats = stats_map.entry(device).or_default();
 
             // Update the appropriate field
             match stat_name {

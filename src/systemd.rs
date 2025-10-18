@@ -2,9 +2,17 @@ use anyhow::{Context, Result};
 use async_trait::async_trait;
 use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use indexmap::IndexMap;
+use serde::Deserialize;
 use std::process::Command;
 
 use crate::monitor::{Alert, Monitor, Severity};
+
+#[derive(Debug, Deserialize)]
+pub struct SystemdConfig {
+    pub service_name: String,
+    #[serde(with = "humantime_serde")]
+    pub max_time_since: std::time::Duration,
+}
 
 #[derive(Debug)]
 struct ServiceStatus {
@@ -16,14 +24,14 @@ struct ServiceStatus {
 #[derive(Debug)]
 pub struct SystemdServiceMonitor {
     service_name: String,
-    max_time_between_runs: Duration,
+    max_time_since: Duration,
 }
 
 impl SystemdServiceMonitor {
-    pub fn new(service_name: &str, max_time_between_runs: Duration) -> Self {
+    pub fn new(config: SystemdConfig) -> Self {
         Self {
-            service_name: service_name.to_string(),
-            max_time_between_runs,
+            service_name: config.service_name,
+            max_time_since: Duration::seconds(config.max_time_since.as_secs() as i64),
         }
     }
 
@@ -124,14 +132,14 @@ impl Monitor for SystemdServiceMonitor {
         match status.last_run {
             Some(last_run) => {
                 let duration_since = now.signed_duration_since(last_run);
-                if duration_since > self.max_time_between_runs {
+                if duration_since > self.max_time_since {
                     Ok(Some(Alert::new(
                         id,
                         &format!(
                             "Service '{}' hasn't run in {} days (expected every {} days). Check with `systemctl status {}`",
                             self.service_name,
                             duration_since.num_days(),
-                            self.max_time_between_runs.num_days(),
+                            self.max_time_since.num_days(),
                             self.service_name
                         ),
                         Severity::Warn,

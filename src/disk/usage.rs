@@ -1,9 +1,18 @@
+use std::path::PathBuf;
+
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use indexmap::IndexMap;
+use serde::Deserialize;
 use sysinfo::Disks;
 
 use crate::monitor::{Alert, Monitor, Severity};
+
+#[derive(Debug, Deserialize)]
+pub struct DiskUsageConfig {
+    pub mount_point: PathBuf,
+    pub threshold: f64,
+}
 
 #[derive(Debug)]
 pub struct DiskUsageMonitor {
@@ -12,10 +21,10 @@ pub struct DiskUsageMonitor {
 }
 
 impl DiskUsageMonitor {
-    pub fn new(mount_point: &str, alert_threshold: f64) -> Self {
+    pub fn new(config: DiskUsageConfig) -> Self {
         Self {
-            mount_point: mount_point.to_string(),
-            alert_threshold,
+            mount_point: config.mount_point.to_string_lossy().to_string(),
+            alert_threshold: config.threshold,
         }
     }
 }

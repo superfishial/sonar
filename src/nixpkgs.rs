@@ -3,11 +3,18 @@ use async_trait::async_trait;
 use chrono::{DateTime, Duration, Utc};
 use indexmap::IndexMap;
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use std::{collections::HashMap, path::PathBuf};
 
 use crate::monitor::{Alert, Monitor, Severity};
+
+#[derive(Debug, Deserialize)]
+pub struct NixpkgsConfig {
+    pub path: PathBuf,
+    #[serde(with = "humantime_serde")]
+    pub max_age: std::time::Duration,
+}
 
 #[derive(Debug, Deserialize)]
 struct FlakeLock {
@@ -36,14 +43,14 @@ struct Locked {
 #[derive(Debug)]
 pub struct FlakeLockMonitor {
     flake_lock_path: String,
-    max_time_since_update: Duration,
+    max_age: Duration,
 }
 
 impl FlakeLockMonitor {
-    pub fn new(flake_lock_path: &str, max_time_since_update: Duration) -> Self {
+    pub fn new(config: NixpkgsConfig) -> Self {
         Self {
-            flake_lock_path: flake_lock_path.to_string(),
-            max_time_since_update,
+            flake_lock_path: config.path.to_string_lossy().to_string(),
+            max_age: Duration::seconds(config.max_age.as_secs() as i64),
         }
     }
 
@@ -98,7 +105,7 @@ impl Monitor for FlakeLockMonitor {
         match self.get_nixpkgs_last_modified()? {
             Some(last_modified) => {
                 let duration_since = now.signed_duration_since(last_modified);
-                if duration_since < self.max_time_since_update {
+                if duration_since < self.max_age {
                     return Ok(None);
                 }
 

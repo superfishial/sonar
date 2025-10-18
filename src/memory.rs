@@ -4,9 +4,18 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Duration;
 use indexmap::IndexMap;
+use serde::Deserialize;
 use sysinfo::{MemoryRefreshKind, RefreshKind, System};
 
 use crate::monitor::{Alert, Monitor, Severity};
+
+#[derive(Debug, Deserialize)]
+pub struct MemoryConfig {
+    pub critical_threshold: f64,
+    pub warn_threshold: f64,
+    #[serde(with = "humantime_serde")]
+    pub duration: std::time::Duration,
+}
 
 #[derive(Debug)]
 pub struct MemoryUsageMonitor {
@@ -19,18 +28,14 @@ pub struct MemoryUsageMonitor {
 }
 
 impl MemoryUsageMonitor {
-    pub fn new(
-        critical_alert_threshold: f64,
-        warn_alert_threshold: f64,
-        duration_threshold: Duration,
-    ) -> Self {
+    pub fn new(config: MemoryConfig) -> Self {
         let system = System::new_with_specifics(
             RefreshKind::nothing().with_memory(MemoryRefreshKind::nothing().with_ram()),
         );
         Self {
-            critical_alert_threshold,
-            warn_alert_threshold,
-            duration_threshold,
+            critical_alert_threshold: config.critical_threshold,
+            warn_alert_threshold: config.warn_threshold,
+            duration_threshold: Duration::seconds(config.duration.as_secs() as i64),
 
             over_limit_at: None,
             system,

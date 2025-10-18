@@ -2,9 +2,17 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Duration;
 use indexmap::IndexMap;
+use serde::Deserialize;
 use sysinfo::{CpuRefreshKind, RefreshKind, System};
 
 use crate::monitor::{Alert, Monitor, Severity};
+
+#[derive(Debug, Deserialize)]
+pub struct CpuUsageConfig {
+    pub threshold: f32,
+    #[serde(with = "humantime_serde")]
+    pub duration: std::time::Duration,
+}
 
 #[derive(Debug)]
 pub struct CpuUsageMonitor {
@@ -16,13 +24,13 @@ pub struct CpuUsageMonitor {
 }
 
 impl CpuUsageMonitor {
-    pub fn new(alert_threshold: f32, duration_threshold: Duration) -> Self {
+    pub fn new(config: CpuUsageConfig) -> Self {
         let system = System::new_with_specifics(
             RefreshKind::nothing().with_cpu(CpuRefreshKind::nothing().with_cpu_usage()),
         );
         Self {
-            alert_threshold,
-            duration_threshold,
+            alert_threshold: config.threshold,
+            duration_threshold: Duration::seconds(config.duration.as_secs() as i64),
 
             over_limit_at: None,
             system,

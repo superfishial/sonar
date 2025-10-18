@@ -2,9 +2,17 @@ use anyhow::{Context, Result};
 use async_trait::async_trait;
 use chrono::Duration;
 use indexmap::IndexMap;
+use serde::Deserialize;
 use sysinfo::Components;
 
 use crate::monitor::{Alert, Monitor, Severity};
+
+#[derive(Debug, Deserialize)]
+pub struct CpuTempConfig {
+    pub threshold: f32,
+    #[serde(with = "humantime_serde")]
+    pub duration: std::time::Duration,
+}
 
 #[derive(Debug)]
 pub struct CpuTempMonitor {
@@ -16,10 +24,10 @@ pub struct CpuTempMonitor {
 }
 
 impl CpuTempMonitor {
-    pub fn new(alert_threshold: f32, duration_threshold: Duration) -> Self {
+    pub fn new(config: CpuTempConfig) -> Self {
         Self {
-            alert_threshold,
-            duration_threshold,
+            alert_threshold: config.threshold,
+            duration_threshold: Duration::seconds(config.duration.as_secs() as i64),
 
             over_limit_at: None,
             components: Components::new(),

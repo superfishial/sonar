@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use chrono::Duration;
+use anyhow::Result;
 use clap::Parser;
 use indexmap::IndexMap;
 use reqwest::Url;
@@ -8,9 +8,9 @@ use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
 
 use crate::{
-    config::Config,
+    config::{Config, MonitorsConfig},
     cpu::{CpuTempMonitor, CpuUsageMonitor},
-    disk::{DiskScrubMonitor, DiskStatsMonitor, DiskUsageMonitor},
+    disk::{DiskHealthMonitor, DiskScrubMonitor, DiskUsageMonitor},
     memory::MemoryUsageMonitor,
     monitor::{Alert, Monitor, Severity},
     nixpkgs::FlakeLockMonitor,
@@ -35,43 +35,21 @@ async fn main() {
         .with_ansi(true)
         .init();
 
-    // This returns an error if the `.env` file doesn't exist, which we ignore
+    // Returns an error if the `.env` file doesn't exist, which we ignore
     dotenv::dotenv().ok();
 
+    // Configuration
     let config = Config::parse();
-
     if config.dry_run {
         warn!("!!! Dry run mode enabled !!!");
     }
 
-    let mut monitors: Vec<Box<dyn Monitor>> = vec![
-        // CPU
-        Box::new(CpuTempMonitor::new(80., Duration::minutes(1))),
-        Box::new(CpuUsageMonitor::new(25., Duration::hours(12))),
-        Box::new(CpuUsageMonitor::new(75., Duration::minutes(30))),
-        // Disks
-        Box::new(DiskStatsMonitor::new("/mnt/data")),
-        Box::new(DiskUsageMonitor::new("/data/hdd", 0.75)),
-        Box::new(DiskUsageMonitor::new("/", 0.75)),
-        Box::new(DiskScrubMonitor::new("/data/hdd", Duration::days(60))),
-        Box::new(DiskScrubMonitor::new("/", Duration::days(60))),
-        // Memory
-        Box::new(MemoryUsageMonitor::new(0.9, 0.75, Duration::minutes(30))),
-        // Nixpkgs
-        Box::new(FlakeLockMonitor::new(
-            "/home/saghen/code/personal/nixfiles/flake.lock",
-            Duration::days(30),
-        )),
-        // Systemd
-        Box::new(SystemdServiceMonitor::new(
-            "restic-backups-primary",
-            Duration::days(1),
-        )),
-    ];
+    let monitors_config = MonitorsConfig::from_file(&config.monitors_config_path).unwrap();
+    let mut monitors = build_monitors(monitors_config).unwrap();
 
-    let mut alert_sender = AlertSender::new(&config.discord_webhook_url, config.dry_run);
-
+    // Main loop
     info!("Starting sonar");
+    let mut alert_sender = AlertSender::new(&config.discord_webhook_url, config.dry_run);
     loop {
         info!("Running monitor loop...");
         for monitor in monitors.iter_mut() {
@@ -144,4 +122,47 @@ impl AlertSender {
             Err(e) => error!("Error sending alert: {:?}", e),
         };
     }
+}
+
+fn build_monitors(config: MonitorsConfig) -> Result<Vec<Box<dyn Monitor>>> {
+    let mut monitors: Vec<Box<dyn Monitor>> = Vec::new();
+
+    // CPU monitors
+    if let Some(temp_config) = config.cpu.temp {
+        monitors.push(Box::new(CpuTempMonitor::new(temp_config)));
+    }
+
+    for usage_config in config.cpu.usage.into_vec() {
+        monitors.push(Box::new(CpuUsageMonitor::new(usage_config)));
+    }
+
+    // Disk monitors
+    for health_config in config.disk.health.into_vec() {
+        monitors.push(Box::new(DiskHealthMonitor::new(health_config)));
+    }
+
+    for usage_config in config.disk.usage.into_vec() {
+        monitors.push(Box::new(DiskUsageMonitor::new(usage_config)));
+    }
+
+    for scrub_config in config.disk.scrub.into_vec() {
+        monitors.push(Box::new(DiskScrubMonitor::new(scrub_config)));
+    }
+
+    // Memory monitor
+    if let Some(memory_config) = config.memory {
+        monitors.push(Box::new(MemoryUsageMonitor::new(memory_config)));
+    }
+
+    // Nixpkgs monitor
+    if let Some(nixpkgs_config) = config.nixpkgs {
+        monitors.push(Box::new(FlakeLockMonitor::new(nixpkgs_config)));
+    }
+
+    // Systemd monitor
+    if let Some(systemd_config) = config.systemd {
+        monitors.push(Box::new(SystemdServiceMonitor::new(systemd_config)));
+    }
+
+    Ok(monitors)
 }

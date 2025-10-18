@@ -1,10 +1,10 @@
 # Sonar
 
-Tiny monitoring tool written in Rust for monitoring CPU temperature, CPU usage, disk usage, disk health/stats, and memory usage. When an alert fires, a Discord webhook will be fired.
+Lightweight monitoring tool for monitoring system health of the super fish NAS. When an alert fires, a Discord message will be sent, notifying the admin when Severity == Critical.
 
 ## Roadmap
 
-- [ ] Configuration file
+- [x] Configuration file (`monitors.toml`)
 - [x] Nix Package/NixOS module
 - [x] CPU
   - [x] Temperature

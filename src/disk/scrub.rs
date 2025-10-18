@@ -1,12 +1,22 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Duration;
 use indexmap::IndexMap;
+use serde::Deserialize;
 
 use crate::{
     disk::btrfs::get_btrfs_scrub_date,
     monitor::{Alert, Monitor, Severity},
 };
+
+#[derive(Debug, Deserialize)]
+pub struct DiskScrubConfig {
+    pub mount_point: PathBuf,
+    #[serde(with = "humantime_serde")]
+    pub time_since: std::time::Duration,
+}
 
 #[derive(Debug)]
 pub struct DiskScrubMonitor {
@@ -15,10 +25,10 @@ pub struct DiskScrubMonitor {
 }
 
 impl DiskScrubMonitor {
-    pub fn new(mount_point: &str, time_between_scrubs: Duration) -> Self {
+    pub fn new(config: DiskScrubConfig) -> Self {
         Self {
-            mount_point: mount_point.to_string(),
-            time_between_scrubs,
+            mount_point: config.mount_point.to_string_lossy().to_string(),
+            time_between_scrubs: Duration::seconds(config.time_since.as_secs() as i64),
         }
     }
 }
