@@ -11,7 +11,7 @@ use crate::{
     config::{Config, MonitorsConfig},
     cpu::{CpuTempMonitor, CpuUsageMonitor},
     disk::{DiskHealthMonitor, DiskScrubMonitor, DiskUsageMonitor},
-    memory::MemoryUsageMonitor,
+    memory::{MemoryOOMMonitor, MemoryUsageMonitor},
     monitor::{Alert, Monitor, Severity},
     nixpkgs::FlakeLockMonitor,
     systemd::SystemdServiceMonitor,
@@ -128,30 +128,33 @@ fn build_monitors(config: MonitorsConfig) -> Result<Vec<Box<dyn Monitor>>> {
     let mut monitors: Vec<Box<dyn Monitor>> = Vec::new();
 
     // CPU monitors
-    if let Some(temp_config) = config.cpu.temp {
-        monitors.push(Box::new(CpuTempMonitor::new(temp_config)));
+    if let Some(cpu_temp_config) = config.cpu.temp {
+        monitors.push(Box::new(CpuTempMonitor::new(cpu_temp_config)));
     }
 
-    for usage_config in config.cpu.usage.into_vec() {
-        monitors.push(Box::new(CpuUsageMonitor::new(usage_config)));
+    if let Some(cpu_usage_config) = config.cpu.usage {
+        monitors.push(Box::new(CpuUsageMonitor::new(cpu_usage_config)));
     }
 
     // Disk monitors
-    for health_config in config.disk.health.into_vec() {
-        monitors.push(Box::new(DiskHealthMonitor::new(health_config)));
+    for disk_health_config in config.disk.health.into_vec() {
+        monitors.push(Box::new(DiskHealthMonitor::new(disk_health_config)));
     }
 
-    for usage_config in config.disk.usage.into_vec() {
-        monitors.push(Box::new(DiskUsageMonitor::new(usage_config)));
+    for disk_usage_config in config.disk.usage.into_vec() {
+        monitors.push(Box::new(DiskUsageMonitor::new(disk_usage_config)));
     }
 
-    for scrub_config in config.disk.scrub.into_vec() {
-        monitors.push(Box::new(DiskScrubMonitor::new(scrub_config)));
+    for disk_scrub_config in config.disk.scrub.into_vec() {
+        monitors.push(Box::new(DiskScrubMonitor::new(disk_scrub_config)));
     }
 
     // Memory monitor
-    if let Some(memory_config) = config.memory {
-        monitors.push(Box::new(MemoryUsageMonitor::new(memory_config)));
+    if let Some(memory_usage_config) = config.memory.usage {
+        monitors.push(Box::new(MemoryUsageMonitor::new(memory_usage_config)));
+    }
+    if let Some(memory_oom_config) = config.memory.oom {
+        monitors.push(Box::new(MemoryOOMMonitor::new(memory_oom_config)));
     }
 
     // Nixpkgs monitor

@@ -7,7 +7,7 @@ use serde::{Deserialize, Deserializer};
 use crate::{
     cpu::{CpuTempConfig, CpuUsageConfig},
     disk::{DiskHealthConfig, DiskScrubConfig, DiskUsageConfig},
-    memory::MemoryConfig,
+    memory::{MemoryOOMConfig, MemoryUsageConfig},
     nixpkgs::NixpkgsConfig,
     systemd::SystemdConfig,
 };
@@ -34,7 +34,7 @@ pub struct MonitorsConfig {
     #[serde(default)]
     pub disk: DiskConfig,
     #[serde(default)]
-    pub memory: Option<MemoryConfig>,
+    pub memory: MemoryConfig,
     #[serde(default)]
     pub nixpkgs: Option<NixpkgsConfig>,
     #[serde(default)]
@@ -45,7 +45,7 @@ pub struct MonitorsConfig {
 pub struct CpuConfig {
     pub temp: Option<CpuTempConfig>,
     #[serde(default)]
-    pub usage: OneOrMany<CpuUsageConfig>,
+    pub usage: Option<CpuUsageConfig>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -56,6 +56,14 @@ pub struct DiskConfig {
     pub usage: OneOrMany<DiskUsageConfig>,
     #[serde(default)]
     pub scrub: OneOrMany<DiskScrubConfig>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct MemoryConfig {
+    #[serde(default)]
+    pub oom: Option<MemoryOOMConfig>,
+    #[serde(default)]
+    pub usage: Option<MemoryUsageConfig>,
 }
 
 // Helper enum to handle both single values and arrays

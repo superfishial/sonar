@@ -1,5 +1,3 @@
-// TODO: OOM kills
-
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Duration;
@@ -10,7 +8,7 @@ use sysinfo::{MemoryRefreshKind, RefreshKind, System};
 use crate::monitor::{Alert, Monitor, Severity};
 
 #[derive(Debug, Deserialize)]
-pub struct MemoryConfig {
+pub struct MemoryUsageConfig {
     pub critical_threshold: f64,
     pub warn_threshold: f64,
     #[serde(with = "humantime_serde")]
@@ -28,7 +26,7 @@ pub struct MemoryUsageMonitor {
 }
 
 impl MemoryUsageMonitor {
-    pub fn new(config: MemoryConfig) -> Self {
+    pub fn new(config: MemoryUsageConfig) -> Self {
         let system = System::new_with_specifics(
             RefreshKind::nothing().with_memory(MemoryRefreshKind::nothing().with_ram()),
         );

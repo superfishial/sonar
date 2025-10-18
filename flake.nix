@@ -87,9 +87,12 @@
               };
             };
             memory = {
-              critical_threshold = 0.9;
-              warn_threshold = 0.75;
-              duration = "30m";
+              oom.within_last = "30m";
+              usage = {
+                critical_threshold = 0.9;
+                warn_threshold = 0.75;
+                duration = "30m";
+              };
             };
           };
 

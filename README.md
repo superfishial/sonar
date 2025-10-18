@@ -13,12 +13,13 @@ Lightweight monitoring tool for monitoring system health of the super fish NAS. 
   - [x] Usage
   - [x] Stats/Health
   - [x] Scrub interval
-- [ ] Memory
+- [x] Memory
   - [x] Usage
-  - [ ] OOM kills
+  - [x] OOM kills
 - [ ] Network
   - [ ] Connect to self via domain
   - [ ] Connect to third party via domain
+  - [ ] Connect to third party via IP
 - [x] Systemd service status
 - [ ] UPS battery level
 - [x] Nixpkgs last update
