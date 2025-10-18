@@ -14,6 +14,7 @@ use crate::{
     memory::MemoryUsageMonitor,
     monitor::{Alert, Monitor},
     nixpkgs::FlakeLockMonitor,
+    systemd::SystemdServiceMonitor,
 };
 
 mod config;
@@ -22,6 +23,7 @@ mod disk;
 mod memory;
 mod monitor;
 mod nixpkgs;
+mod systemd;
 
 #[tokio::main]
 async fn main() {
@@ -55,6 +57,11 @@ async fn main() {
         Box::new(FlakeLockMonitor::new(
             "/home/saghen/code/personal/nixfiles/flake.lock",
             Duration::days(30),
+        )),
+        // Systemd
+        Box::new(SystemdServiceMonitor::new(
+            "restic-backups-primary",
+            Duration::days(1),
         )),
     ];
 
