@@ -7,15 +7,15 @@ use crate::monitor::{Alert, Monitor, Severity};
 
 #[derive(Debug)]
 pub struct DiskUsageMonitor {
-    alert_threshold: f64,
     mount_point: String,
+    alert_threshold: f64,
 }
 
 impl DiskUsageMonitor {
-    pub fn new(alert_threshold: f64, mount_point: &str) -> Self {
+    pub fn new(mount_point: &str, alert_threshold: f64) -> Self {
         Self {
-            alert_threshold,
             mount_point: mount_point.to_string(),
+            alert_threshold,
         }
     }
 }

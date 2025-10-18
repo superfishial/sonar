@@ -10,7 +10,7 @@ use tracing_subscriber::EnvFilter;
 use crate::{
     config::Config,
     cpu::{CpuTempMonitor, CpuUsageMonitor},
-    disk::{DiskStatsMonitor, DiskUsageMonitor},
+    disk::{DiskScrubMonitor, DiskStatsMonitor, DiskUsageMonitor},
     memory::MemoryUsageMonitor,
     monitor::{Alert, Monitor},
 };
@@ -43,8 +43,10 @@ async fn main() {
         Box::new(CpuUsageMonitor::new(75., Duration::minutes(30))),
         // Disks
         Box::new(DiskStatsMonitor::new("/mnt/data")),
-        Box::new(DiskUsageMonitor::new(0.75, "/data/hdd")),
-        Box::new(DiskUsageMonitor::new(0.75, "/")),
+        Box::new(DiskUsageMonitor::new("/data/hdd", 0.75)),
+        Box::new(DiskUsageMonitor::new("/", 0.75)),
+        Box::new(DiskScrubMonitor::new("/data/hdd", Duration::days(60))),
+        Box::new(DiskScrubMonitor::new("/", Duration::days(60))),
         // Memory
         Box::new(MemoryUsageMonitor::new(0.9, 0.75, Duration::minutes(30))),
     ];
@@ -55,8 +57,7 @@ async fn main() {
     loop {
         info!("Running monitor loop...");
         for monitor in monitors.iter_mut() {
-            let alert = monitor.run().await;
-            match alert {
+            match monitor.run().await {
                 Ok(Some(alert)) => {
                     // Ensure X hours have passed since the last alert with this ID
                     let sufficient_time_since_last_alert = last_alert_send

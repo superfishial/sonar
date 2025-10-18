@@ -9,10 +9,10 @@ Tiny monitoring tool written in Rust for monitoring CPU temperature, CPU usage, 
 - [x] CPU
   - [x] Temperature
   - [x] Usage
-- [ ] Disk
+- [x] Disk
   - [x] Usage
   - [x] Stats/Health
-  - [ ] Scrub interval
+  - [x] Scrub interval
 - [ ] Memory
   - [x] Usage
   - [ ] OOM kills

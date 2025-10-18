@@ -1,3 +1,4 @@
+use chrono::{DateTime, TimeZone, Utc};
 use indexmap::IndexMap;
 use std::ops::Add;
 use std::process::Command;
@@ -105,4 +106,47 @@ fn parse_btrfs_stats(output: &str) -> Result<IndexMap<String, BtrfsStats>> {
     }
 
     Ok(stats_map)
+}
+
+pub fn get_btrfs_scrub_date(mount_point: &str) -> Result<Option<DateTime<Utc>>> {
+    let output = Command::new("btrfs")
+        .arg("scrub")
+        .arg("status")
+        .arg(mount_point)
+        .output()
+        .context(format!(
+            "Failed to execute btrfs command: btrfs scrub status '{}'",
+            mount_point
+        ))?;
+
+    ensure!(
+        output.status.success(),
+        "btrfs command failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    parse_btrfs_scrub_date(&stdout)
+}
+
+fn parse_btrfs_scrub_date(output: &str) -> Result<Option<DateTime<Utc>>> {
+    for line in output.lines() {
+        if let Some(date_str) = line.strip_prefix("Scrub started:").map(|s| s.trim()) {
+            // Parse the date string (format: "Sat Oct 18 09:42:43 2025")
+            let parsed = chrono::NaiveDateTime::parse_from_str(date_str, "%a %b %d %H:%M:%S %Y")
+                .context(format!("Failed to parse scrub date: '{}'", date_str))?;
+
+            // Assume local timezone and convert to UTC
+            let local = chrono::Local::now().timezone();
+            let datetime = local
+                .from_local_datetime(&parsed)
+                .single()
+                .context("Ambiguous or invalid local datetime")?
+                .with_timezone(&Utc);
+
+            return Ok(Some(datetime));
+        }
+    }
+
+    Ok(None)
 }
