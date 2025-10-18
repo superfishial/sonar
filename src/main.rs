@@ -13,6 +13,7 @@ use crate::{
     disk::{DiskScrubMonitor, DiskStatsMonitor, DiskUsageMonitor},
     memory::MemoryUsageMonitor,
     monitor::{Alert, Monitor},
+    nixpkgs::FlakeLockMonitor,
 };
 
 mod config;
@@ -20,6 +21,7 @@ mod cpu;
 mod disk;
 mod memory;
 mod monitor;
+mod nixpkgs;
 
 #[tokio::main]
 async fn main() {
@@ -49,6 +51,11 @@ async fn main() {
         Box::new(DiskScrubMonitor::new("/", Duration::days(60))),
         // Memory
         Box::new(MemoryUsageMonitor::new(0.9, 0.75, Duration::minutes(30))),
+        // Nixpkgs
+        Box::new(FlakeLockMonitor::new(
+            "/home/saghen/code/personal/nixfiles/flake.lock",
+            Duration::days(30),
+        )),
     ];
 
     let mut last_alert_send: HashMap<String, chrono::DateTime<chrono::Utc>> = HashMap::new();
