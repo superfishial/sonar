@@ -74,7 +74,12 @@ async fn main() {
                         })
                         .unwrap_or(true);
 
-                    if sufficient_time_since_last_alert {
+                    if config.dry_run {
+                        info!(
+                            "Not sending alert '{}' as dry run is enabled: {:?}",
+                            alert.id, alert
+                        );
+                    } else if sufficient_time_since_last_alert {
                         last_alert_send.insert(alert.id.clone(), chrono::Utc::now());
                         send_alert(&config.discord_webhook_url, &alert)
                             .await

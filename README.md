@@ -16,8 +16,10 @@ Tiny monitoring tool written in Rust for monitoring CPU temperature, CPU usage, 
 - [ ] Memory
   - [x] Usage
   - [ ] OOM kills
-- [ ] Network (just to log)
-- [ ] Systemd service (primarily for backups)
+- [ ] Network
+  - [ ] Connect to self via domain
+  - [ ] Connect to third party via domain
+- [ ] Systemd service status
 - [ ] UPS battery level
 - [x] Nixpkgs last update
 

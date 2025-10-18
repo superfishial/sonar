@@ -8,4 +8,7 @@ pub struct Config {
 
     #[arg(long, env)]
     pub discord_webhook_url: Url,
+
+    #[arg(long, env)]
+    pub dry_run: bool,
 }
