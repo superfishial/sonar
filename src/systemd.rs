@@ -19,6 +19,7 @@ struct ServiceStatus {
     last_run: Option<DateTime<Utc>>,
     last_status: Option<String>,
     is_failed: bool,
+    is_active: bool,
 }
 
 #[derive(Debug)]
@@ -46,6 +47,7 @@ impl SystemdServiceMonitor {
             .trim()
             .to_string();
         let is_failed = active_state_str == "failed";
+        let is_active = active_state_str == "active";
 
         // Get the last execution timestamp
         let exec_time = Command::new("systemctl")
@@ -81,6 +83,7 @@ impl SystemdServiceMonitor {
             last_run,
             last_status,
             is_failed,
+            is_active,
         })
     }
 }
@@ -127,39 +130,38 @@ impl Monitor for SystemdServiceMonitor {
         match status.last_run {
             Some(last_run) => {
                 let duration_since = now.signed_duration_since(last_run);
-                if duration_since > self.max_time_since {
-                    let should_use_days = self.max_time_since.num_days() > 0;
-
-                    Ok(Some(Alert::new(
-                        id,
-                        &format!(
-                            "Service '{}' hasn't run in {} (expected every {}). Check with `systemctl status {}`",
-                            self.unit,
-                            if should_use_days {
-                                format!("{} days", duration_since.num_days())
-                            } else {
-                                format!("{} minutes", duration_since.num_minutes())
-                            },
-                            if should_use_days {
-                                format!("{} days", self.max_time_since.num_days())
-                            } else {
-                                format!("{} minutes", self.max_time_since.num_minutes())
-                            },
-                            self.unit
-                        ),
-                        Severity::Warn,
-                        IndexMap::from([
-                            ("Service".to_string(), self.unit.clone()),
-                            ("Last Run".to_string(), last_run.to_string()),
-                            (
-                                "Days Since".to_string(),
-                                duration_since.num_days().to_string(),
-                            ),
-                        ]),
-                    )))
-                } else {
-                    Ok(None)
+                if status.is_active || duration_since < self.max_time_since {
+                    return Ok(None);
                 }
+
+                let should_use_days = self.max_time_since.num_days() > 0;
+                let duration_since_str = if should_use_days {
+                    format!("{} days", duration_since.num_days())
+                } else {
+                    format!("{} minutes", duration_since.num_minutes())
+                };
+                let max_time_since_str = if should_use_days {
+                    format!("{} days", self.max_time_since.num_days())
+                } else {
+                    format!("{} minutes", self.max_time_since.num_minutes())
+                };
+
+                Ok(Some(Alert::new(
+                    id,
+                    &format!(
+                        "Service '{}' hasn't run in {} (expected every {}). Check with `systemctl status {}`",
+                        self.unit, duration_since_str, max_time_since_str, self.unit
+                    ),
+                    Severity::Warn,
+                    IndexMap::from([
+                        ("Service".to_string(), self.unit.clone()),
+                        ("Last Run".to_string(), last_run.to_string()),
+                        (
+                            "Days Since".to_string(),
+                            duration_since.num_days().to_string(),
+                        ),
+                    ]),
+                )))
             }
             None => Ok(Some(Alert::new(
                 id,
