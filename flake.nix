@@ -25,7 +25,7 @@
 
         sonar = pkgs.rustPlatform.buildRustPackage {
           pname = "sonar";
-          version = "1.1.0";
+          version = "1.0.0";
           src = ./.;
           cargoLock.lockFile = ./Cargo.lock;
           nativeBuildInputs = with pkgs; [ pkg-config ];
@@ -117,17 +117,6 @@
               defaultText = literalExpression "self.packages.\${pkgs.system}.sonar";
             };
 
-            user = mkOption {
-              type = types.str;
-              default = "sonar";
-            };
-
-            group = mkOption {
-              type = types.str;
-              default = "sonar";
-              description = "Group under which sonar runs";
-            };
-
             environmentFile = mkOption {
               type = types.nullOr types.path;
               default = null;
@@ -192,7 +181,7 @@
               type = types.listOf types.str;
               default = [ ];
               description = "Extra command-line arguments to pass to sonar";
-              example = [ "--polling-interval-ms=15001" ];
+              example = [ "--polling-interval-ms=15000" ];
             };
           };
 
@@ -204,8 +193,6 @@
 
               serviceConfig = {
                 Type = "simple";
-                User = cfg.user;
-                Group = cfg.group;
                 ExecStart = "${cfg.package}/bin/sonar --monitors-config-path ${monitorsConfigFile} ${escapeShellArgs cfg.extraArgs}";
                 EnvironmentFile = mkIf (cfg.environmentFile != null) cfg.environmentFile;
                 Restart = "on-failure";
@@ -217,18 +204,6 @@
                 ProtectHome = true;
                 ReadWritePaths = [ ];
               };
-            };
-
-            users.users = mkIf (cfg.user == "sonar") {
-              sonar = {
-                isSystemUser = true;
-                group = cfg.group;
-                description = "Sonar service user";
-              };
-            };
-
-            users.groups = mkIf (cfg.group == "sonar") {
-              sonar = { };
             };
           };
         };

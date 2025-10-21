@@ -1,6 +1,6 @@
 [package]
 name = "sonar"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
 
 [dependencies]
@@ -23,4 +23,4 @@ dotenv = "0.15.0"
 toml = "0.9"
 humantime-serde = "1.1"  # For parsing durations like "1m", "12h"
 regex = "1.12.2"
-serde_yaml = "0.9.34"
+serde_yml = "0.0.12"
