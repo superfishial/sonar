@@ -105,6 +105,7 @@ impl AlertSender {
                 id = alert.id,
                 "Not sending alert as it was sent less than 4 hours ago",
             );
+            return;
         }
 
         self.last_alert_send
