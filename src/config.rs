@@ -6,7 +6,9 @@ use serde::{Deserialize, Deserializer};
 
 use crate::{
     cpu::{CpuTempConfig, CpuUsageConfig},
-    disk::{DiskHealthConfig, DiskScrubConfig, DiskUsageConfig},
+    disk::{
+        DiskHddSmartConfig, DiskHealthConfig, DiskNvmeSmartConfig, DiskScrubConfig, DiskUsageConfig,
+    },
     memory::{MemoryOOMConfig, MemoryUsageConfig},
     nixpkgs::NixpkgsConfig,
     systemd::SystemdConfig,
@@ -43,9 +45,10 @@ pub struct MonitorsConfig {
 
 #[derive(Debug, Default, Deserialize)]
 pub struct CpuConfig {
+    #[serde(default)]
     pub temp: Option<CpuTempConfig>,
     #[serde(default)]
-    pub usage: Option<CpuUsageConfig>,
+    pub usage: OneOrMany<CpuUsageConfig>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -56,6 +59,16 @@ pub struct DiskConfig {
     pub usage: OneOrMany<DiskUsageConfig>,
     #[serde(default)]
     pub scrub: OneOrMany<DiskScrubConfig>,
+    #[serde(default)]
+    pub smart: DiskSmartConfig,
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct DiskSmartConfig {
+    #[serde(default)]
+    pub hdd: OneOrMany<DiskHddSmartConfig>,
+    #[serde(default)]
+    pub nvme: OneOrMany<DiskNvmeSmartConfig>,
 }
 
 #[derive(Debug, Default, Deserialize)]

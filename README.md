@@ -13,6 +13,7 @@ Lightweight monitoring tool for monitoring system health of the super fish NAS. 
   - [x] Usage
   - [x] Stats/Health
   - [x] Scrub interval
+  - [x] SMART monitoring
 - [x] Memory
   - [x] Usage
   - [x] OOM kills

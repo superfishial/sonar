@@ -10,7 +10,10 @@ use tracing_subscriber::EnvFilter;
 use crate::{
     config::{Config, MonitorsConfig},
     cpu::{CpuTempMonitor, CpuUsageMonitor},
-    disk::{DiskHealthMonitor, DiskScrubMonitor, DiskUsageMonitor},
+    disk::{
+        DiskHddSmartMonitor, DiskHealthMonitor, DiskNvmeSmartMonitor, DiskScrubMonitor,
+        DiskUsageMonitor,
+    },
     memory::{MemoryOOMMonitor, MemoryUsageMonitor},
     monitor::{Alert, Monitor, Severity},
     nixpkgs::FlakeLockMonitor,
@@ -131,8 +134,7 @@ fn build_monitors(config: MonitorsConfig) -> Result<Vec<Box<dyn Monitor>>> {
     if let Some(cpu_temp_config) = config.cpu.temp {
         monitors.push(Box::new(CpuTempMonitor::new(cpu_temp_config)));
     }
-
-    if let Some(cpu_usage_config) = config.cpu.usage {
+    for cpu_usage_config in config.cpu.usage.into_vec() {
         monitors.push(Box::new(CpuUsageMonitor::new(cpu_usage_config)));
     }
 
@@ -140,13 +142,18 @@ fn build_monitors(config: MonitorsConfig) -> Result<Vec<Box<dyn Monitor>>> {
     for disk_health_config in config.disk.health.into_vec() {
         monitors.push(Box::new(DiskHealthMonitor::new(disk_health_config)));
     }
-
     for disk_usage_config in config.disk.usage.into_vec() {
         monitors.push(Box::new(DiskUsageMonitor::new(disk_usage_config)));
     }
-
     for disk_scrub_config in config.disk.scrub.into_vec() {
         monitors.push(Box::new(DiskScrubMonitor::new(disk_scrub_config)));
+    }
+
+    for disk_hdd_smart_config in config.disk.smart.hdd.into_vec() {
+        monitors.push(Box::new(DiskHddSmartMonitor::new(disk_hdd_smart_config)));
+    }
+    for disk_nvme_smart_config in config.disk.smart.nvme.into_vec() {
+        monitors.push(Box::new(DiskNvmeSmartMonitor::new(disk_nvme_smart_config)));
     }
 
     // Memory monitor

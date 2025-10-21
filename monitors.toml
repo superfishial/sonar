@@ -32,6 +32,9 @@ time_since = "60d"
 mount_point = "/data/hdd"
 time_since = "60d"
 
+[[disk.smart.nvme]]
+device = "/dev/nvme0n1"
+
 [memory.oom]
 within_last = "30m"
 
