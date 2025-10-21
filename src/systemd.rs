@@ -128,13 +128,23 @@ impl Monitor for SystemdServiceMonitor {
             Some(last_run) => {
                 let duration_since = now.signed_duration_since(last_run);
                 if duration_since > self.max_time_since {
+                    let should_use_days = self.max_time_since.num_days() > 0;
+
                     Ok(Some(Alert::new(
                         id,
                         &format!(
-                            "Service '{}' hasn't run in {} days (expected every {} days). Check with `systemctl status {}`",
+                            "Service '{}' hasn't run in {} (expected every {}). Check with `systemctl status {}`",
                             self.unit,
-                            duration_since.num_days(),
-                            self.max_time_since.num_days(),
+                            if should_use_days {
+                                format!("{} days", duration_since.num_days())
+                            } else {
+                                format!("{} minutes", duration_since.num_minutes())
+                            },
+                            if should_use_days {
+                                format!("{} days", self.max_time_since.num_days())
+                            } else {
+                                format!("{} minutes", self.max_time_since.num_minutes())
+                            },
                             self.unit
                         ),
                         Severity::Warn,
