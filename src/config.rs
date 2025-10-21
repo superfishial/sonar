@@ -126,7 +126,14 @@ where
 impl MonitorsConfig {
     pub fn from_file(path: &std::path::Path) -> anyhow::Result<Self> {
         let contents = std::fs::read_to_string(path)?;
-        let config: MonitorsConfig = toml::from_str(&contents)?;
-        Ok(config)
+        if path.extension().map(|e| e == "toml").unwrap_or(false) {
+            let config: MonitorsConfig = toml::from_str(&contents)?;
+            Ok(config)
+        } else if path.extension().map(|e| e == "yaml").unwrap_or(false) {
+            let config: MonitorsConfig = serde_yaml::from_str(&contents)?;
+            Ok(config)
+        } else {
+            anyhow::bail!("Unsupported/unknown file extension for monitors config file");
+        }
     }
 }

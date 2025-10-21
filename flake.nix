@@ -105,7 +105,7 @@
           };
 
           # Generate TOML configuration
-          monitorsConfigFile = pkgs.writeText "monitors.toml" (generators.toTOML { } cfg.monitors);
+          monitorsConfigFile = pkgs.writeText "monitors.yaml" (generators.toYAML { } cfg.monitors);
         in
         {
           options.services.sonar = {
