@@ -96,6 +96,12 @@
                 duration = "30m";
               };
             };
+            systemd = [
+              {
+                unit = "restic-backups-primary";
+                max_time_since = "2d";
+              }
+            ];
           };
 
           # Generate TOML configuration
@@ -160,20 +166,24 @@
                         threshold = 0.8;
                       }
                     ];
+                    smart.nvme = [ { device = "/dev/nvme0n1"; } ];
                   };
                   memory = {
-                    critical_threshold = 0.95;
-                    warn_threshold = 0.8;
-                    duration = "15m";
+                    oom.within_last = "30m";
+                    usage = {
+                      critical_threshold = 0.95;
+                      warn_threshold = 0.8;
+                      duration = "15m";
+                    };
                   };
                   nixpkgs = {
                     path = "/home/user/nixfiles/flake.lock";
                     max_age = "30d";
                   };
-                  systemd = {
-                    service_name = "restic-backups-primary";
+                  systemd = [ {
+                    unit = "restic-backups-primary";
                     max_time_since = "1d";
-                  };
+                  } ];
                 }
               '';
             };

@@ -9,7 +9,7 @@ use crate::monitor::{Alert, Monitor, Severity};
 
 #[derive(Debug, Deserialize)]
 pub struct SystemdConfig {
-    pub service_name: String,
+    pub unit: String,
     #[serde(with = "humantime_serde")]
     pub max_time_since: std::time::Duration,
 }
@@ -23,14 +23,14 @@ struct ServiceStatus {
 
 #[derive(Debug)]
 pub struct SystemdServiceMonitor {
-    service_name: String,
+    unit: String,
     max_time_since: Duration,
 }
 
 impl SystemdServiceMonitor {
     pub fn new(config: SystemdConfig) -> Self {
         Self {
-            service_name: config.service_name,
+            unit: config.unit,
             max_time_since: Duration::seconds(config.max_time_since.as_secs() as i64),
         }
     }
@@ -38,12 +38,7 @@ impl SystemdServiceMonitor {
     fn get_service_status(&self) -> Result<ServiceStatus> {
         // Get the active state
         let active_state = Command::new("systemctl")
-            .args([
-                "show",
-                &self.service_name,
-                "--property=ActiveState",
-                "--value",
-            ])
+            .args(["show", &self.unit, "--property=ActiveState", "--value"])
             .output()
             .context("Failed to execute systemctl show")?;
 
@@ -56,7 +51,7 @@ impl SystemdServiceMonitor {
         let exec_time = Command::new("systemctl")
             .args([
                 "show",
-                &self.service_name,
+                &self.unit,
                 "--property=ExecMainStartTimestamp",
                 "--value",
                 "--timestamp=utc",
@@ -93,11 +88,11 @@ impl SystemdServiceMonitor {
 #[async_trait]
 impl Monitor for SystemdServiceMonitor {
     fn name(&self) -> String {
-        format!("Systemd Service: {}", self.service_name)
+        format!("Systemd Service: {}", self.unit)
     }
 
     async fn run(&mut self) -> Result<Option<Alert>> {
-        let id = &format!("Systemd Service: {}", self.service_name);
+        let id = &format!("Systemd Service: {}", self.unit);
         let now = Utc::now();
 
         let status = self.get_service_status()?;
@@ -108,11 +103,11 @@ impl Monitor for SystemdServiceMonitor {
                 id,
                 &format!(
                     "Service '{}' last invocation failed. Check status with `systemctl status {}`",
-                    self.service_name, self.service_name
+                    self.unit, self.unit
                 ),
                 Severity::Warn,
                 IndexMap::from([
-                    ("Service".to_string(), self.service_name.clone()),
+                    ("Service".to_string(), self.unit.clone()),
                     (
                         "Status".to_string(),
                         status.last_status.unwrap_or_else(|| "failed".to_string()),
@@ -137,14 +132,14 @@ impl Monitor for SystemdServiceMonitor {
                         id,
                         &format!(
                             "Service '{}' hasn't run in {} days (expected every {} days). Check with `systemctl status {}`",
-                            self.service_name,
+                            self.unit,
                             duration_since.num_days(),
                             self.max_time_since.num_days(),
-                            self.service_name
+                            self.unit
                         ),
                         Severity::Warn,
                         IndexMap::from([
-                            ("Service".to_string(), self.service_name.clone()),
+                            ("Service".to_string(), self.unit.clone()),
                             ("Last Run".to_string(), last_run.to_string()),
                             (
                                 "Days Since".to_string(),
@@ -160,10 +155,10 @@ impl Monitor for SystemdServiceMonitor {
                 id,
                 &format!(
                     "Service '{}' has never run. Check with `systemctl status {}`",
-                    self.service_name, self.service_name
+                    self.unit, self.unit
                 ),
                 Severity::Warn,
-                IndexMap::from([("Service".to_string(), self.service_name.clone())]),
+                IndexMap::from([("Service".to_string(), self.unit.clone())]),
             ))),
         }
     }

@@ -47,6 +47,6 @@ duration = "30m"
 path = "/home/saghen/code/personal/nixfiles/flake.lock"
 max_age = "30d"
 
-[systemd]
+[[systemd]]
 service_name = "restic-backups-primary"
 max_time_since = "2d"
