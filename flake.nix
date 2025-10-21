@@ -86,6 +86,7 @@
                 mount_point = "/";
                 time_since = "60d";
               };
+              smart.nvme = [ { device = "/dev/nvme0n1"; } ];
             };
             memory = {
               oom.within_last = "30m";
