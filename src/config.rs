@@ -130,7 +130,7 @@ impl MonitorsConfig {
             let config: MonitorsConfig = toml::from_str(&contents)?;
             Ok(config)
         } else if path.extension().map(|e| e == "yaml").unwrap_or(false) {
-            let config: MonitorsConfig = serde_yaml::from_str(&contents)?;
+            let config: MonitorsConfig = serde_yml::from_str(&contents)?;
             Ok(config)
         } else {
             anyhow::bail!("Unsupported/unknown file extension for monitors config file");
