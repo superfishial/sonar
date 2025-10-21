@@ -156,10 +156,17 @@ impl Monitor for SystemdServiceMonitor {
                     IndexMap::from([
                         ("Service".to_string(), self.unit.clone()),
                         ("Last Run".to_string(), last_run.to_string()),
-                        (
-                            "Days Since".to_string(),
-                            duration_since.num_days().to_string(),
-                        ),
+                        if should_use_days {
+                            (
+                                "Days Since".to_string(),
+                                duration_since.num_days().to_string(),
+                            )
+                        } else {
+                            (
+                                "Minutes Since".to_string(),
+                                duration_since.num_minutes().to_string(),
+                            )
+                        },
                     ]),
                 )))
             }
