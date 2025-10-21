@@ -40,7 +40,7 @@ pub struct MonitorsConfig {
     #[serde(default)]
     pub nixpkgs: Option<NixpkgsConfig>,
     #[serde(default)]
-    pub systemd: Option<SystemdConfig>,
+    pub systemd: OneOrMany<SystemdConfig>,
 }
 
 #[derive(Debug, Default, Deserialize)]

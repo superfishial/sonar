@@ -170,7 +170,7 @@ fn build_monitors(config: MonitorsConfig) -> Result<Vec<Box<dyn Monitor>>> {
     }
 
     // Systemd monitor
-    if let Some(systemd_config) = config.systemd {
+    for systemd_config in config.systemd.into_vec() {
         monitors.push(Box::new(SystemdServiceMonitor::new(systemd_config)));
     }
 
