@@ -28,8 +28,20 @@
           version = "1.0.0";
           src = ./.;
           cargoLock.lockFile = ./Cargo.lock;
-          nativeBuildInputs = with pkgs; [ pkg-config ];
-          buildInputs = with pkgs; [ smartmontools ];
+          nativeBuildInputs = with pkgs; [
+            pkg-config
+            makeWrapper
+          ];
+
+          postInstall = ''
+            wrapProgram $out/bin/sonar \
+              --prefix PATH : ${
+                pkgs.lib.makeBinPath [
+                  pkgs.smartmontools
+                  pkgs.btrfs-progs
+                ]
+              }
+          '';
 
           meta = with pkgs.lib; {
             description = "Sonar";
