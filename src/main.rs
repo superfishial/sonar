@@ -63,7 +63,7 @@ async fn main() {
                 Err(e) => {
                     alert_sender
                         .send(&Alert::new(
-                            &format!("Error running monitor {}", monitor.name()),
+                            &format!("Error running monitor: {}", monitor.name()),
                             &format!("{:?}", e),
                             Severity::Warn,
                             IndexMap::new(),
