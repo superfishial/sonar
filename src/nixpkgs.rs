@@ -4,7 +4,6 @@ use chrono::{DateTime, Duration, Utc};
 use indexmap::IndexMap;
 use serde::Deserialize;
 use std::fs;
-use std::path::Path;
 use std::{collections::HashMap, path::PathBuf};
 
 use crate::monitor::{Alert, Monitor, Severity};
@@ -55,8 +54,7 @@ impl FlakeLockMonitor {
     }
 
     fn get_nixpkgs_last_modified(&self) -> Result<Option<DateTime<Utc>>> {
-        let path = Path::new(&self.flake_lock_path);
-        let contents = fs::read_to_string(path)
+        let contents = fs::read_to_string(&self.flake_lock_path)
             .with_context(|| format!("Failed to read flake.lock at {}", self.flake_lock_path))?;
 
         let flake_lock: FlakeLock =
