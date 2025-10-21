@@ -213,7 +213,6 @@
                 # Security hardening
                 NoNewPrivileges = true;
                 PrivateTmp = true;
-                ProtectHome = true;
                 ReadWritePaths = [ ];
               };
             };
