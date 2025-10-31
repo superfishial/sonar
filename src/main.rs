@@ -98,7 +98,7 @@ impl AlertSender {
         let sufficient_time_since_last_alert = self
             .last_alert_send
             .get(&alert.id)
-            .map(|last_send| (*last_send + chrono::Duration::hours(4)) < chrono::Utc::now())
+            .map(|last_send| (*last_send + chrono::Duration::hours(24)) < chrono::Utc::now())
             .unwrap_or(true);
         if !sufficient_time_since_last_alert {
             info!(
