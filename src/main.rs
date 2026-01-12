@@ -8,6 +8,7 @@ use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
 
 use crate::{
+    auto_restart::AutoRestart,
     config::{Config, MonitorsConfig},
     cpu::{CpuTempMonitor, CpuUsageMonitor},
     disk::{
@@ -20,6 +21,7 @@ use crate::{
     systemd::SystemdServiceMonitor,
 };
 
+mod auto_restart;
 mod config;
 mod cpu;
 mod disk;
@@ -163,6 +165,11 @@ fn build_monitors(config: MonitorsConfig) -> Result<Vec<Box<dyn Monitor>>> {
     }
     if let Some(memory_oom_config) = config.memory.oom {
         monitors.push(Box::new(MemoryOOMMonitor::new(memory_oom_config)));
+    }
+
+    // Auto restart monitor
+    if let Some(auto_restart_config) = config.auto_restart {
+        monitors.push(Box::new(AutoRestart::new(auto_restart_config)));
     }
 
     // Nixpkgs monitor

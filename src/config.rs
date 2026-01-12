@@ -5,6 +5,7 @@ use reqwest::Url;
 use serde::{Deserialize, Deserializer};
 
 use crate::{
+    auto_restart::AutoRestartConfig,
     cpu::{CpuTempConfig, CpuUsageConfig},
     disk::{
         DiskHddSmartConfig, DiskHealthConfig, DiskNvmeSmartConfig, DiskScrubConfig, DiskUsageConfig,
@@ -37,6 +38,8 @@ pub struct MonitorsConfig {
     pub disk: DiskConfig,
     #[serde(default)]
     pub memory: MemoryConfig,
+    #[serde(default)]
+    pub auto_restart: Option<AutoRestartConfig>,
     #[serde(default)]
     pub nixpkgs: Option<NixpkgsConfig>,
     #[serde(default)]
